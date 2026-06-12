@@ -1,0 +1,306 @@
+{
+  "name": "JOB APPLICATION TRACKER",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "labelIds": [
+            "Label_9067887478403651886"
+          ],
+          "q": "application OR \"thank you for applying\" OR \"we received your application\""
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        752,
+        112
+      ],
+      "id": "edd30f48-5646-4928-b415-706efdc8b1f7",
+      "name": "Gmail Trigger1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "a7tD7p1k96U2sm2d",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $input.first().json;\nconst messageId = email.id || 'no-id';\n\n// ── STEP 1: DUPLICATE CHECK FIRST ──\nconst processed = $input.all();\nconst isDuplicate = processed.filter(i => i.json.id === messageId).length > 1;\nif (isDuplicate) {\n  return [];\n}\n\n// ── STEP 2: EXTRACT RAW FIELDS ──\nconst senderEmail = email.From || email.from || email.sender || 'unknown@unknown.com';\nconst subjectLine = email.Subject || email.subject || 'No Subject';\nconst emailBody = email.snippet || email.text || email.body || '';\nconst fullText = subjectLine + ' ' + emailBody;\nconst emailOnly = senderEmail.replace(/.*<(.+)>/, '$1').trim();\nconst domain = emailOnly.includes('@') \n  ? emailOnly.split('@')[1].split('.')[0] \n  : 'Unknown';\n\n// ── STEP 3: EXTRACT COMPANY ──\nconst companyMatch = fullText.match(/\\b(?:at|to)\\s+([A-Z][a-zA-Z0-9]+)\\b/);\nconst companyFromText = companyMatch ? companyMatch[1].trim() : null;\nconst companyFromDomain = domain.charAt(0).toUpperCase() + domain.slice(1);\nconst company = companyFromText || companyFromDomain;\n\n// ── STEP 4: EXTRACT ROLE ──\nconst roleMatch = fullText.match(/(?:for(?:\\s+the)?(?:\\s+role(?:\\s+of)?)?|position(?:\\s+of)?)\\s+([A-Za-z\\s]+(?:intern|engineer|analyst|developer|manager|designer|scientist|trainee|specialist)(?:\\s+[A-Za-z]+)?)\\s*(?:at|to|,|$)/i);\nconst jobRole = roleMatch ? roleMatch[1].trim() : 'Not Specified';\n\nconst today = new Date().toISOString().split('T')[0];\n\n// ── STEP 5: RETURN DATA ──\nreturn [{\n  json: {\n    company: company,\n    role: jobRole,\n    date: today,\n    subject: subjectLine,\n    sender: emailOnly,\n    messageId: messageId,\n    alertSent: 'Yes',\n    matchScore: 'AI Pending'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        112
+      ],
+      "id": "d5ddd0fe-4edd-4e5c-82b3-12ab551a8e8e",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1wv1qhU17hb5CyQIsWlM6DH_kWDVQw2f98E3c7ivh0Io",
+          "mode": "list",
+          "cachedResultName": "JOB APPLICATION TRACKER",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wv1qhU17hb5CyQIsWlM6DH_kWDVQw2f98E3c7ivh0Io/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1wv1qhU17hb5CyQIsWlM6DH_kWDVQw2f98E3c7ivh0Io/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Company Name": "={{ $('Code in JavaScript1').item.json.company }}",
+            "Job Role": "={{ $('Code in JavaScript1').item.json.role }}",
+            "Application Date": "={{ $('Code in JavaScript1').item.json.date }}",
+            "Email Subject": "={{ $('Code in JavaScript1').item.json.subject }}",
+            "Sender Email": "={{ $('Code in JavaScript1').item.json.sender }}",
+            "Message ID": "={{ $('Code in JavaScript1').item.json.messageId }}",
+            "alertSent": "yes",
+            "Match Score": "={{ $('Basic LLM Chain1').item.json.text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job Role",
+              "displayName": "Job Role",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Application Date",
+              "displayName": "Application Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email Subject",
+              "displayName": "Email Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sender Email",
+              "displayName": "Sender Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message ID",
+              "displayName": "Message ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "alertSent",
+              "displayName": "alertSent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Match Score",
+              "displayName": "Match Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1744,
+        112
+      ],
+      "id": "09e9f9df-226a-4ea6-b35f-b02f979f43b3",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "8pgKn7GffFmm5fZO",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "=8422314639",
+        "text": "=🎯 New Job Application Logged!\n\n🏢 Company: {{ $('Code in JavaScript1').item.json.company }}\n💼 Role: {{ $('Code in JavaScript1').item.json.role }}\n📅 Date: {{ $('Code in JavaScript1').item.json.date }}\n📧 From: {{ $('Code in JavaScript1').item.json.sender }}\n📨 Subject: {{ $('Code in JavaScript1').item.json.subject }}\n⭐ Match Score: {{ $('Basic LLM Chain1').item.json.text }}\n\n✅ Saved to Google Sheets!",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1952,
+        112
+      ],
+      "id": "e9ea9a78-2f94-4281-ba5b-b85f07f9340a",
+      "name": "Send a text message1",
+      "webhookId": "6ab987d8-8641-4b6e-acbc-ae1d512a62ba",
+      "credentials": {
+        "telegramApi": {
+          "id": "LwnENPWQ2HlOT8nV",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI career advisor evaluating job application confirmation emails for a final year computer science student named Garima who is actively seeking internships in software engineering, data science, machine learning, automation, backend development, or any technology role.\n\nScore this job application confirmation email from 1 to 10 using these criteria:\n\nSCORING GUIDE:\n9-10 → Top tech company (Google, Meta, Apple, Microsoft, Amazon, Netflix, Tesla, Spotify) AND role directly matches CS/tech skills\n7-8 → Good tech company OR strong technical role with relevant skills like Python, ML, APIs, automation, data analysis\n5-6 → Mid-tier company with relevant tech role OR top company with partially relevant role\n3-4 → Non-tech role OR unclear job description\n1-2 → Completely irrelevant to CS/tech OR no useful information in email\n\nDETAILS TO EVALUATE:\nCompany: {{ $('Code in JavaScript1').item.json.company }}\nRole: {{ $('Code in JavaScript1').item.json.role }}\nSubject: {{ $('Code in JavaScript1').item.json.subject }}\n\nIMPORTANT RULES:\n- Reply with ONLY a single number between 1 and 10\n- No explanation, no text, just the number\n- Never reply with 1 unless the role is completely irrelevant to technology\n- A confirmation email from any major tech company should score minimum 6",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1376,
+        112
+      ],
+      "id": "23ff24df-dc55-4254-a528-4f8305025e4d",
+      "name": "Basic LLM Chain1",
+      "retryOnFail": true,
+      "maxTries": null,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1584,
+        112
+      ],
+      "id": "3ea6d9d3-0d90-4079-a9cd-486a4c44e209",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "pYs5BZEMTLORJgqW",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b68b2e8c-f3d5-4b77-8146-c26c558d3a88",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8cb0bf98cdfa60cd373a86e5a419b15f9ff5574634f9aeaea9868d7861d8bc18"
+  },
+  "nodeGroups": [],
+  "id": "7NQWnBirCfNlBgIv",
+  "tags": []
+}
